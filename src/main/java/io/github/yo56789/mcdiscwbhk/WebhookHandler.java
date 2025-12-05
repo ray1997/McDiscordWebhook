@@ -50,6 +50,12 @@ public class WebhookHandler {
     public static void post(String uri, String data) {
         if(data.isBlank()) return;
 
+        // n8n test webhook; send another post to production webhook
+        if (uri.Contains("webhook-test"))
+        {
+            post(uri.Replace("webhook-test", "webhook"), data);
+        }
+
         // Check if the URI is valid and not empty
         if (uri == null || uri.isEmpty() || !isValidUrl(uri)) {
             if (!warnedWebhookInvalid) {
