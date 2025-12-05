@@ -11,8 +11,6 @@ import java.util.regex.Pattern;
 
 public class WebhookHandler {
     private static boolean warnedWebhookInvalid = false;
-    private static final Pattern webhookRegexPattern = Pattern.compile("http.://discord\\.com/api/webhooks/.*/.*",
-            Pattern.CASE_INSENSITIVE);
 
     public static String assembleMessage(String message, String username, int color) {
         if (message.isBlank()) {
@@ -52,23 +50,36 @@ public class WebhookHandler {
     public static void post(String uri, String data) {
         if(data.isBlank()) return;
 
-        if (Objects.equals(uri, "") || !webhookRegexPattern.matcher(uri).find()) {
+        // Check if the URI is valid and not empty
+        if (uri == null || uri.isEmpty() || !isValidUrl(uri)) {
             if (!warnedWebhookInvalid) {
                 Main.LOGGER.error("Invalid Webhook URL");
                 warnedWebhookInvalid = true;
             }
             return;
         }
+        
         HttpClient client = HttpClient.newBuilder().build();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(uri))
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(data))
                 .build();
+        
         try {
             client.send(request, HttpResponse.BodyHandlers.discarding());
         } catch (Exception e) {
-            Main.LOGGER.error("Failed to send webhook");
+            Main.LOGGER.error("Failed to send webhook", e);
+        }
+    }
+    
+    // Simple method to check if the URL is valid without regex for simplicity
+    private static boolean isValidUrl(String url) {
+        try {
+            new URI(url);
+            return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 }
