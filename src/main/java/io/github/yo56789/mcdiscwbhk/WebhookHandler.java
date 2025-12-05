@@ -50,14 +50,16 @@ public class WebhookHandler {
     public static void post(String uri, String data) {
         if(data.isBlank()) return;
 
-        // n8n test webhook; send another post to production webhook
-        if (uri.Contains("webhook-test"))
-        {
-            post(uri.Replace("webhook-test", "webhook"), data);
+        if (uri == null || uri.isEmpty()) {
+            if (!warnedWebhookInvalid) {
+                Main.LOGGER.error("Webhook hasn't been set yet!");
+                warnedWebhookInvalid = true;
+            }
+            return;
         }
 
-        // Check if the URI is valid and not empty
-        if (uri == null || uri.isEmpty() || !isValidUrl(uri)) {
+        // Check if the URI is valid
+        if (!isValidUrl(uri)) {
             if (!warnedWebhookInvalid) {
                 Main.LOGGER.error("Invalid Webhook URL");
                 warnedWebhookInvalid = true;
@@ -65,6 +67,16 @@ public class WebhookHandler {
             return;
         }
         
+        // n8n test webhook; send another post to production webhook
+        if (uri.contains("webhook-test"))
+        {
+            String newUri = uri.replace("webhook-test","webhook");
+
+            if (!newUri.equals(uri)){
+                post(newUri, data);
+            }
+        }
+
         HttpClient client = HttpClient.newBuilder().build();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(uri))
